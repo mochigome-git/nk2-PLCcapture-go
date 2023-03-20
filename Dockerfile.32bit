@@ -1,0 +1,20 @@
+# Stage 1: Build the Go program
+FROM golang:1.20-alpine AS build
+WORKDIR /opt/nk2PLCcapture
+
+# Copy the project files and build the program
+COPY . .
+RUN apk --no-cache add gcc musl-dev
+RUN cd 32bit && \
+    CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main32bit main.32bit.go
+
+# Stage 2: Copy the built Go program into a minimal container
+FROM alpine:3.14
+RUN apk --no-cache add ca-certificates
+WORKDIR /app
+COPY --from=build /opt/nk2PLCcapture/32bit/main32bit /app/
+COPY 32bit/.env.local.32 /app/.env.local.32
+
+RUN chmod +x /app/main32bit
+
+CMD ["/app/main32bit"]
