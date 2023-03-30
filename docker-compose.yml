@@ -4,7 +4,7 @@ services:
   msp-2bit:
     container_name: PLCcapute-msp-2bit
     image: msp-2bit:latest
-    restart: no
+    restart: unless-stopped
     stop_grace_period: 30s
     logging:
       driver: "json-file"
