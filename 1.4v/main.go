@@ -80,7 +80,7 @@ func main() {
 
 	// Use a goroutine to run the main loop
 	// Create a buffered channel to store the data to be processed
-	dataCh := make(chan map[string]interface{}, 100)
+	dataCh := make(chan map[string]interface{}, 200)
 
 	go func() {
 		for {
@@ -113,7 +113,7 @@ func main() {
 	}()
 
 	// Spawn multiple worker goroutines that read the data from the channel, process it, and send it to MQTT
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 200; i++ {
 		go func() {
 			for message := range dataCh {
 
@@ -125,7 +125,7 @@ func main() {
 				}
 
 				// Publish the message to the MQTT server
-				topic := "testplc/holding_register/16bit&32bit/" + message["address"].(string)
+				topic := "plc/holding_register/16bit&32bit/" + message["address"].(string)
 				mqtt.PublishMessage(mqttclient, topic, string(messageJSON), logger)
 
 			}
