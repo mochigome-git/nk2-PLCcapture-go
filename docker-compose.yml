@@ -3,7 +3,7 @@ version: "3.8"
 services:
   nk2-msp:
     container_name: nk2-msp
-    image: nk2-msp:1.6v
+    image: nk2-msp:1.7v
     restart: always
     logging:
       driver: "json-file"
