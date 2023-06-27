@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -21,7 +22,7 @@ import (
 
 var (
 	shutdown         bool
-	devicesReadCount int
+	devicesReadCount uint32
 )
 
 func main() {
@@ -108,7 +109,7 @@ func main() {
 
 func startWorkers(ctx context.Context, workerCount int, dataCh <-chan map[string]interface{}, mqttclient *mqtt2.MQTTClient, logger *log.Logger, wg *sync.WaitGroup) {
 	for i := 0; i < workerCount; i++ {
-		wg.Add(1)
+		wg.Add(workerCount)
 		go func() {
 			defer wg.Done()
 
@@ -126,6 +127,7 @@ func startWorkers(ctx context.Context, workerCount int, dataCh <-chan map[string
 			}
 		}()
 	}
+	wg.Wait()
 }
 
 func readDataFromDevices(ctx context.Context, devices []utils.Device, dataCh chan<- map[string]interface{}, wg *sync.WaitGroup, logger *log.Logger) {
@@ -152,11 +154,11 @@ func readDataFromDevices(ctx context.Context, devices []utils.Device, dataCh cha
 				case <-ctx.Done():
 					return
 				case dataCh <- message:
-					devicesReadCount++
-					log.Println(devicesReadCount)
+					count := atomic.AddUint32(&devicesReadCount, 1)
+					log.Println(count)
 
-					if devicesReadCount == len(devices) {
-						devicesReadCount = 0
+					if count == uint32(len(devices)) {
+						atomic.StoreUint32(&devicesReadCount, 0)
 						return
 					}
 
@@ -164,13 +166,13 @@ func readDataFromDevices(ctx context.Context, devices []utils.Device, dataCh cha
 						break
 					}
 
-					time.Sleep(1 * time.Second)
 				}
 			}
 		}(device)
 	}
 
 	wg.Wait()
+	close(dataCh)
 }
 
 func restartProgram() {
