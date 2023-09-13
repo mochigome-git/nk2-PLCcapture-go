@@ -70,6 +70,16 @@ func ReadData(deviceType string, deviceNumber uint16, numberRegisters uint16) (i
 			}
 		}
 		value = firstSixDigits
+	} else if numberRegisters == 3 { // 2-bit device
+		// Parse 2-bit data
+		registerBinary, _ := mcp.NewParser().Do(data)
+		data = registerBinary.Payload
+		var val uint8
+		if len(data) >= 1 {
+			// Extract the 2-bit value from the 8-bit data
+			val = uint8(data[0] & 0x01)
+		}
+		value = val
 	} else {
 		// Invalid number of registers
 		return nil, fmt.Errorf("invalid number of registers: %d", numberRegisters)

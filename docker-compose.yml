@@ -3,10 +3,18 @@ version: "3.8"
 services:
   nk2-msp:
     container_name: nk2-msp
-    image: nk2-msp:1.7v
+    image: nk2-msp:1.9v
     restart: always
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "10"
+    environment:
+      MQTT_HOST: ${MQTT_HOST}
+      MQTT_TOPIC: ${MQTT_TOPIC}
+      PLC_HOST: ${PLC_HOST}
+      PLC_PORT: ${PLC_PORT}
+      DEVICES_2bit: ${DEVICES_2bit}
+      DEVICES_16bit: ${DEVICES_16bit}
+      DEVICES_32bit: ${DEVICES_32bit}

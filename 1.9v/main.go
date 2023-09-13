@@ -17,13 +17,15 @@ import (
 )
 
 func main() {
-	config.LoadEnv(".env.local")
+	//config.LoadEnv(".env.local")
 
 	mqttHost := os.Getenv("MQTT_HOST")
 	plcHost := os.Getenv("PLC_HOST")
 	plcPort := config.GetEnvAsInt("PLC_PORT", 5011)
 	devices16 := os.Getenv("DEVICES_16bit")
 	devices32 := os.Getenv("DEVICES_32bit")
+	devices2 := os.Getenv("DEVICES_2bit")
+	mqttTopic := os.Getenv("MQTT_TOPIC")
 
 	// Set up a channel to listen for SIGTERM signals
 	signalCh := make(chan os.Signal, 1)
@@ -48,8 +50,14 @@ func main() {
 		logger.Fatalf("Error parsing device addresses: %v", err)
 	}
 
-	// Combine the 16-bit and 32-bit devices into a single slice
-	devices := append(devices16Parsed, devices32Parsed...)
+	devices2Parsed, err := utils.ParseDeviceAddresses(devices2, logger)
+	if err != nil {
+		logger.Fatalf("Error parsing device addresses: %v", err)
+	}
+
+	// Combine the 2-bit, 16-bit and 32-bit devices into a single slice
+	devices := append(devices2Parsed, devices16Parsed...)
+	devices = append(devices, devices32Parsed...)
 
 	// Create a channel to signal when the main loop has finished
 	doneCh := make(chan struct{})
@@ -98,7 +106,7 @@ func main() {
 				}
 
 				// Publish the message to the MQTT server
-				topic := "testplc/holding_register/2bit/" + message["address"].(string)
+				topic := mqttTopic + message["address"].(string)
 				mqtt.PublishMessage(mqttclient, topic, string(messageJSON), logger)
 			}
 		}()
@@ -129,7 +137,7 @@ func main() {
 			}
 
 			// Check if all devices in devices32 are being read
-			if len(devices) != len(devices32Parsed)+len(devices16Parsed) {
+			if len(devices) != len(devices32Parsed)+len(devices16Parsed)+len(devices2Parsed) {
 				logger.Printf("Number of devices read (%d) does not match the number of devices listed in DEVICES_32bit (%d) and DEVICES_16bit (%d).", len(devices), len(devices32Parsed), len(devices16Parsed))
 				logger.Printf("Restarting the program...")
 				panic("Device count mismatch")
