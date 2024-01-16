@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	//config.LoadEnv(".env.local")
+	config.LoadEnv(".env.local")
 
 	mqttHost := os.Getenv("MQTT_HOST")
 	plcHost := os.Getenv("PLC_HOST")
